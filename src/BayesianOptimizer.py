@@ -46,6 +46,9 @@ class BayesianOptimizer(object):
         self.kernel_matrix_tilde = None
         ''' inv(Kernel_matrix - \simga^2 * I)'''
 
+        self.gamma = 0.0
+        ''' gamma '''
+
         self.measured_point = [initial_parameter]
         ''' measured point '''
 
@@ -60,6 +63,7 @@ class BayesianOptimizer(object):
 
         self.input_space = [My_xrange(x[0], x[1], x[2]) for x in parameter_range_list]
         ''' input space (iterator list) '''
+
 
     def execute_optimization(self):
         """
@@ -79,7 +83,7 @@ class BayesianOptimizer(object):
 
             # get next parameter: x_candidate
             x_candidate = None
-            optimal_acquisition_candidate = -99999999999.0
+            optimal_evaluation_function_value = -99999999999.0
 
             for parameter in itertools.product(*self.input_space):
                 if np.random.rand() < np.power(self.bayesian_optimizer_parameter.coarse_graining,
@@ -96,11 +100,12 @@ class BayesianOptimizer(object):
                     # calc variance
                     var = k_T_hat
 
-                    # update x_candidate
-                    if optimal_acquisition_candidate + 0.001 < (
+
+                    # update x_candidate (confidence bound)
+                    if optimal_evaluation_function_value + 0.001 < (
                                 mean + np.sqrt(self.bayesian_optimizer_parameter.beta * var)):
                         # print("(" + str(optimal_acquisition_candidate+0.01) +", "+ str((mean + np.sqrt(self.bayesian_optimizer_parameter.beta * var))) + ")")
-                        optimal_acquisition_candidate = (mean + np.sqrt(self.bayesian_optimizer_parameter.beta * var))
+                        optimal_evaluation_function_value = (mean + np.sqrt(self.bayesian_optimizer_parameter.beta * var))
                         x_candidate = list(x)
 
             x_candidate = np.round(x_candidate, 7)
@@ -145,5 +150,3 @@ class BayesianOptimizer(object):
             self.kernel_matrix + self.bayesian_optimizer_parameter.sigma * self.bayesian_optimizer_parameter.sigma * np.identity(
                 self.kernel_matrix.shape[0]))
         # print(self.kernel_matrix_tilde)
-
-

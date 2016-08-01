@@ -10,12 +10,16 @@ class BayesianOptimizerParameter(object):
     description
     """
 
-    def __init__(self, beta=1.0, sigma=0.001, coarse_graining=0.2, epoch=100):
+    def __init__(self, delta=0.01, beta=1.0, sigma=0.001, coarse_graining=0.2, epoch=100):
         """
 
         :param beta: relative weight between mean and variance
         :param sigma: noise
         """
+
+        self.delta = delta
+        ''' delta '''
+
         self.beta = beta
         ''' beta '''
 
