@@ -64,7 +64,6 @@ class BayesianOptimizer(object):
         self.input_space = [My_xrange(x[0], x[1], x[2]) for x in parameter_range_list]
         ''' input space (iterator list) '''
 
-
     def execute_optimization(self):
         """
         execute optimization method
@@ -84,6 +83,7 @@ class BayesianOptimizer(object):
             # get next parameter: x_candidate
             x_candidate = None
             optimal_evaluation_function_value = -99999999999.0
+            variance_at_x_candidate = 0.0
 
             for parameter in itertools.product(*self.input_space):
                 if np.random.rand() < np.power(self.bayesian_optimizer_parameter.coarse_graining,
@@ -100,45 +100,43 @@ class BayesianOptimizer(object):
                     # calc variance
                     var = k_T_hat
 
+                    # update x_candidate
+                    # UCB
+                    # optimal_evaluation_function_value, x_candidate = self.__update_parameter_UCB(
+                    #     optimal_evaluation_function_value=optimal_evaluation_function_value, mean=mean, var=var, x=x,
+                    #     x_candidate=x_candidate)
+                    # MI
+                    optimal_evaluation_function_value, x_candidate, variance_at_x_candidate = self.__update_parameter_MI(
+                        optimal_evaluation_function_value=optimal_evaluation_function_value, mean=mean, var=var, x=x,
+                        x_candidate=x_candidate)
 
-                    # update x_candidate (confidence bound)
-                    if optimal_evaluation_function_value + 0.001 < (
-                                mean + np.sqrt(self.bayesian_optimizer_parameter.beta * var)):
-                        # print("(" + str(optimal_acquisition_candidate+0.01) +", "+ str((mean + np.sqrt(self.bayesian_optimizer_parameter.beta * var))) + ")")
-                        optimal_evaluation_function_value = (mean + np.sqrt(self.bayesian_optimizer_parameter.beta * var))
-                        x_candidate = list(x)
-
-            x_candidate = np.round(x_candidate, 7)
-            print("next_value -> " + str(x_candidate))
-            print("current_best -> " + str(self.optimal_parameter))
+            self.gamma = self.gamma + variance_at_x_candidate
+            next_parameter_set = np.round(x_candidate, 7)
+            print("iteration: " + str(counter))
+            print(" next_value -> " + str(next_parameter_set))
+            print(" current_best -> " + str(self.optimal_parameter))
             print("")
 
             # do measurement
-            self.measured_point.append(np.array(x_candidate))
-            y = self.black_box_function(x_candidate) + np.random.normal(loc=0,
-                                                                        scale=self.bayesian_optimizer_parameter.sigma)
+            self.measured_point.append(np.array(next_parameter_set))
+            y = self.black_box_function(next_parameter_set) + np.random.normal(loc=0,
+                                                                               scale=self.bayesian_optimizer_parameter.sigma)
             if self.optimal_value < y:
                 self.optimal_value = y
-                self.optimal_parameter = x_candidate
+                self.optimal_parameter = next_parameter_set
 
             self.measured_value.append(y)
 
             # update kernel matrix
-            pre_append_vector = [np.array([self.kernel.compute_value(x, x_candidate)]) for x in self.measured_point]
+            pre_append_vector = [np.array([self.kernel.compute_value(x, next_parameter_set)]) for x in
+                                 self.measured_point]
             # pre_append_vector.pop()
 
             self.kernel_matrix = np.append(self.kernel_matrix, np.array(pre_append_vector[:-1]), axis=1)
             self.kernel_matrix = np.append(self.kernel_matrix, np.array(
-                [np.array([self.kernel.compute_value(x_candidate, x) for x in self.measured_point])]), axis=0)
+                [np.array([self.kernel.compute_value(next_parameter_set, x) for x in self.measured_point])]), axis=0)
 
         return optimal_parameter_of_black_box_function, optimal_value_of_black_box_function
-
-    def __update_kernel_matrix(self):
-        """
-        update kernel matrix method
-        :return: None
-        """
-        pass
 
     def __update_kernel_matrix_tilde(self):
         """
@@ -149,4 +147,36 @@ class BayesianOptimizer(object):
         self.kernel_matrix_tilde = np.linalg.inv(
             self.kernel_matrix + self.bayesian_optimizer_parameter.sigma * self.bayesian_optimizer_parameter.sigma * np.identity(
                 self.kernel_matrix.shape[0]))
-        # print(self.kernel_matrix_tilde)
+
+    def __update_parameter_UCB(self, optimal_evaluation_function_value, mean, var, x, x_candidate):
+        """
+
+        :param optimal_evaluation_function_value:
+        :param mean: mean of the posterior
+        :param var: variance of the posterior
+        :param x: parameter candidate
+        :param x_candidate: next parameter candidate
+        :return: optimal_optimal_evaluation_function_value, next parameter candidate
+        """
+
+        if optimal_evaluation_function_value + 0.001 < (mean + np.sqrt(self.bayesian_optimizer_parameter.beta * var)):
+            return (mean + np.sqrt(self.bayesian_optimizer_parameter.beta * var)), list(x)
+        else:
+            return optimal_evaluation_function_value, x_candidate
+
+    def __update_parameter_MI(self, optimal_evaluation_function_value, mean, var, x, x_candidate):
+        """
+
+        :param optimal_evaluation_function_value:
+        :param mean:
+        :param var:
+        :param x:
+        :param x_candidate:
+        :return:
+        """
+        alpha = np.log(2.0 / self.bayesian_optimizer_parameter.delta)
+        evaluation_value = mean + np.sqrt(alpha) * var / (np.sqrt(var + self.gamma) + np.sqrt(self.gamma))
+        if np.round(optimal_evaluation_function_value, 7) < np.round(evaluation_value, 7):
+            return evaluation_value, list(x), var
+        else:
+            return optimal_evaluation_function_value, x_candidate, 0.0

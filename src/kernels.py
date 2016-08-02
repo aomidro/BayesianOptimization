@@ -59,7 +59,7 @@ class MaternKernel(object):
 
     """
 
-    def __init__(self, l=1.0):
+    def __init__(self, l=0.1):
         self.l = l
 
     def compute_value(self, x1, x2):

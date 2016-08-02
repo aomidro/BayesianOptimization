@@ -17,7 +17,7 @@ def my_function(x):
     :param x: value
     :return: -x^2
     """
-    return -1.0 * (x[0] - 1.2) * (x[0] - 1.2) - (x[1] - 2.0) * (x[1] - 2.0) - (x[2] - 1.45) * (x[2] - 1.45)
+    return (x[0] * np.sin(x[0]*10.0))
 
 
 def main():
@@ -29,12 +29,12 @@ def main():
 
     ''' bo parameter '''
 
-    parmeter_range_list = [(0, 2.5, 0.025), (0, 2.5, 0.025), (0, 2.5, 0.025)]
+    parameter_range_list = [(-1.0, 1.0, 0.001)]
 
     bayesian_optimizer = BayesianOptimizer(black_box_function=my_function,
                                            bayesian_optimizer_parameter=bayesian_optimizer_parameter,
-                                           parameter_range_list=parmeter_range_list,
-                                           initial_parameter=np.array([0.5, 1.2412, 1.3])
+                                           parameter_range_list=parameter_range_list,
+                                           initial_parameter=np.array([1.2])
                                            )
     ''' optimizer '''
 
