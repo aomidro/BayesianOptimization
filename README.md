@@ -24,6 +24,8 @@
 * Bayesian Optimizerのハイパーパラメータの調整をもう少し系統的に行えるようにできないかと考えています。（参考文献4)
 * ハイパーパラメータ空間の正則化も適当にやれるといいですね。
  - それは各人が最初に手でやれば良い気もする
+* 感度分析機能Ref.5参照。
+ - 本当に実装できるかはわからないが、統計的な扱いで推論をしていることのメリットを活かそうと思うとこういうことをやるのが良いのかなと思う。ただ、単に回帰しているだけであることを考えると、私にはそんなに意味があることなのかよくわからない。
 
 ## References
 1. N. Srinivas, A. Krause, Sham M. Kakade and M. Seeger, "Gaussian Process Optimization in the Bandit Setting: No Regret and Experimental Design" (arXiv:0912.3995v4 [cs.LG] )
@@ -38,3 +40,6 @@
 4. J. Snoek, H. Larochelle and Ryan P. Adams, "Practical Bayesian Optimization of Machine Learning Algorithms", preprint(arXiv:1206.2944v2) 
  - https://arxiv.org/abs/1206.2944
  - ハイパーパラメータの調整について書かれている？らしい
+5. M. C. Kennedy and A.O'Hagan "Bayesian calibration of computer models", J. R. Statist. Soc. B, 63, 425–464
+ - http://onlinelibrary.wiley.com/doi/10.1111/1467-9868.00294/abstract
+ - ベイズ最適化を用いることのメリットとして、統計的な扱いがなんかできるようになるということがある。その取り組みの一つとして評価関数の、パラメータに対する感度を調べるというのがあるようだ。そういうのも実装できるとよい。ただ、単に回帰しているだけだというのを忘れそうになるので怖い。
