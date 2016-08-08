@@ -5,9 +5,9 @@ created on 2016/07/28
 """
 
 import numpy as np
+from util import MyXrange
 from BayesianOptimizer import BayesianOptimizer
 from BayesianOptimizerParameter import BayesianOptimizerParameter
-from util import My_xrange
 
 
 def my_function(x):
@@ -17,7 +17,7 @@ def my_function(x):
     :param x: value
     :return: -x^2
     """
-    return (x[0] * np.sin(x[0]*10.0))
+    return -x[0] * x[0]
 
 
 def main():
@@ -26,10 +26,10 @@ def main():
     """
 
     bayesian_optimizer_parameter = BayesianOptimizerParameter()
-
     ''' bo parameter '''
 
-    parameter_range_list = [(-1.0, 1.0, 0.001)]
+    # parameter_range_list = [My_xrange(0, 2.5, 0.1)]
+    parameter_range_list = [np.linspace(-2.5, 2.5, 1000)]
 
     bayesian_optimizer = BayesianOptimizer(black_box_function=my_function,
                                            bayesian_optimizer_parameter=bayesian_optimizer_parameter,
@@ -38,7 +38,11 @@ def main():
                                            )
     ''' optimizer '''
 
-    bayesian_optimizer.execute_optimization()
+    a,b = bayesian_optimizer.execute_optimization()
+    ''' execute optimization '''
+
+    print(a)
+    print(b)
 
 
 if __name__ == '__main__':

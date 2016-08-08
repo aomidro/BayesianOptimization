@@ -12,7 +12,7 @@ class BayesianOptimizerParameter(object):
     description
     """
 
-    def __init__(self, delta=np.power(10.0, -12.0), beta=4.0, sigma=0.01, coarse_graining=0.2, epoch=200):
+    def __init__(self, delta=np.power(10.0, -12.0), beta=4.0, sigma=10.0, coarse_graining=0.85, epoch=4096):
         """
 
         :param delta: used in MI algorithm (see eq 5.2 in "Gaussian Process Optimization with Mutual Information")

@@ -5,7 +5,7 @@ created on 2016/07/28
 """
 
 
-class My_xrange(object):
+class MyXrange(object):
     """
     A pure-python implementation of xrange.
 
