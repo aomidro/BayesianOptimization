@@ -1,7 +1,6 @@
 #  coding=utf-8
 """
 created on 2016/07/28
-@author = Takashi TAKAHASHI
 """
 
 import numpy as np
