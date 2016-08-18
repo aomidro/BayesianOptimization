@@ -133,8 +133,6 @@ class BayesianOptimizer(object):
         find next measurement point based on the estimated value of the alternate function
         :return: next measurement point (in raw input space)
         """
-        # get input space
-        raw_input_space, normalized_input_space = self.input_space.get_input_space()
 
         # find optimal next point in the input space
         optimal_alternate_function_value = -99999999
@@ -142,22 +140,26 @@ class BayesianOptimizer(object):
         normalized_candidate_point = None
         mean_at_next_measurement_point = None
         variance_at_next_measurement_point = None
-        for raw_point in raw_input_space:
-            raw_point = np.array(raw_point)
-            normalized_point = np.array(normalized_input_space.next())
 
-            if np.random.rand() < np.power(self.__coarse_graining_parameter, self.input_space.dimension):
-                # get mean and variance at normalized measurement point
-                mean, variance = self.__get_mean_variance(normalized_point)
+        while raw_candidate_point is None:
+            # get input space
+            raw_input_space, normalized_input_space = self.input_space.get_input_space()
+            for raw_point in raw_input_space:
+                raw_point = np.array(raw_point)
+                normalized_point = np.array(normalized_input_space.next())
 
-                # get alternate function value
-                candidate_value = self.__alternate_function.get_value(mean, variance)
-                if np.round(optimal_alternate_function_value, 7) < np.round(candidate_value, 7):
-                    optimal_alternate_function_value = candidate_value
-                    normalized_candidate_point = normalized_point
-                    raw_candidate_point = raw_point
-                    mean_at_next_measurement_point = mean
-                    variance_at_next_measurement_point = variance
+                if np.random.rand() < np.power(self.__coarse_graining_parameter, self.input_space.dimension):
+                    # get mean and variance at normalized measurement point
+                    mean, variance = self.__get_mean_variance(normalized_point)
+
+                    # get alternate function value
+                    candidate_value = self.__alternate_function.get_value(mean, variance)
+                    if np.round(optimal_alternate_function_value, 7) < np.round(candidate_value, 7):
+                        optimal_alternate_function_value = candidate_value
+                        normalized_candidate_point = normalized_point
+                        raw_candidate_point = raw_point
+                        mean_at_next_measurement_point = mean
+                        variance_at_next_measurement_point = variance
 
         return raw_candidate_point, normalized_candidate_point, mean_at_next_measurement_point, variance_at_next_measurement_point
 
