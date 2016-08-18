@@ -4,8 +4,7 @@ created on 2016/07/28
 """
 
 import numpy as np
-from scipy import special
-import time
+
 
 class GaussianKernel(object):
     """

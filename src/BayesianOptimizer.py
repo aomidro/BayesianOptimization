@@ -3,9 +3,6 @@
 created on 2016/08/18
 """
 import numpy as np
-import matplotlib.pyplot as plt
-import sys
-
 import kernels
 import csv
 import alternateFunctions
@@ -14,11 +11,6 @@ import alternateFunctions
 class BayesianOptimizer(object):
     """
     Bayesian Optimizer class
-
-    Args:
-        hoge
-    Attriibutes:
-        hoge
     """
 
     def __init__(self, input_space, black_box_function, max_iteration=10, measurement_noise=0.01):

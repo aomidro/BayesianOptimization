@@ -3,8 +3,6 @@
 """
 
 import numpy as np
-from scipy import special
-import time
 
 
 class AlternateFunction(object):
