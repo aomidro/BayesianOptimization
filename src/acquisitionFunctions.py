@@ -5,7 +5,7 @@
 import numpy as np
 
 
-class AlternateFunction(object):
+class AcquisitionFunction(object):
     """
     alternate function class
     """
@@ -27,7 +27,7 @@ class AlternateFunction(object):
         pass
 
 
-class UpperConfidenceBound(AlternateFunction):
+class UpperConfidenceBound(AcquisitionFunction):
     """
     upper confidence bound
     """
@@ -47,7 +47,7 @@ class UpperConfidenceBound(AlternateFunction):
         return mean + np.sqrt(self.beta * variance)
 
 
-class MutualInformation(AlternateFunction):
+class MutualInformation(AcquisitionFunction):
     """
     mutual information
     """

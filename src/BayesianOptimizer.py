@@ -5,7 +5,7 @@ created on 2016/08/18
 import numpy as np
 import kernels
 import csv
-import alternateFunctions
+import acquisitionFunctions
 import matplotlib.pyplot as plt
 
 
@@ -65,7 +65,7 @@ class BayesianOptimizer(object):
         self.__measurement_noise = measurement_noise
         ''' measurement noise '''
 
-        self.__alternate_function = alternateFunctions.MutualInformation()
+        self.__alternate_function = acquisitionFunctions.MutualInformation()
         # self.__alternate_function = alternateFunctions.UpperConfidenceBound()
         ''' alternate_function '''
 
