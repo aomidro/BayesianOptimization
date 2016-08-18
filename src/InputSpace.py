@@ -23,6 +23,9 @@ class InputSpace(object):
                                              for x in parameter_list] for parameter_list in self.raw_input_space_list]
         ''' normalized input space list '''
 
+        self.dimension = len(self.raw_input_space_list)
+        ''' input space dimension'''
+
         # self.print_on()
 
     def get_input_space(self):
@@ -40,4 +43,7 @@ class InputSpace(object):
         print("##### normalized input space #####")
         for x in self.normalized_input_space_list:
             print(x)
+        print("")
+        print("##### dimension #####")
+        print(self.dimension)
         print("")

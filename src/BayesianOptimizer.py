@@ -6,6 +6,7 @@ import numpy as np
 import kernels
 import csv
 import alternateFunctions
+import matplotlib.pyplot as plt
 
 
 class BayesianOptimizer(object):
@@ -13,7 +14,8 @@ class BayesianOptimizer(object):
     Bayesian Optimizer class
     """
 
-    def __init__(self, input_space, black_box_function, max_iteration=10, measurement_noise=0.01):
+    def __init__(self, input_space, black_box_function, max_iteration=10, measurement_noise=0.01,
+                 coarse_graining_parameter=0.9):
         """
 
         :param input_space: input space (InputSpace)
@@ -21,6 +23,9 @@ class BayesianOptimizer(object):
         :param max_iteration: max iteration number
         :param measurement_noise: measurement noise
         """
+        self.__coarse_graining_parameter = coarse_graining_parameter
+        ''' coarse graining parameter '''
+
         self.iteration = 0
         ''' number of times step '''
 
@@ -60,7 +65,8 @@ class BayesianOptimizer(object):
         self.__measurement_noise = measurement_noise
         ''' measurement noise '''
 
-        self.__alternate_function = alternateFunctions.UpperConfidenceBound()
+        self.__alternate_function = alternateFunctions.MutualInformation()
+        # self.__alternate_function = alternateFunctions.UpperConfidenceBound()
         ''' alternate_function '''
 
         self.__initialize()
@@ -140,17 +146,18 @@ class BayesianOptimizer(object):
             raw_point = np.array(raw_point)
             normalized_point = np.array(normalized_input_space.next())
 
-            # get mean and variance at normalized measurement point
-            mean, variance = self.__get_mean_variance(normalized_point)
+            if np.random.rand() < np.power(self.__coarse_graining_parameter, self.input_space.dimension):
+                # get mean and variance at normalized measurement point
+                mean, variance = self.__get_mean_variance(normalized_point)
 
-            # get alternate function value
-            candidate_value = self.__alternate_function.get_value(mean, variance)
-            if np.round(optimal_alternate_function_value, 7) < np.round(candidate_value, 7):
-                optimal_alternate_function_value = candidate_value
-                normalized_candidate_point = normalized_point
-                raw_candidate_point = raw_point
-                mean_at_next_measurement_point = mean
-                variance_at_next_measurement_point = variance
+                # get alternate function value
+                candidate_value = self.__alternate_function.get_value(mean, variance)
+                if np.round(optimal_alternate_function_value, 7) < np.round(candidate_value, 7):
+                    optimal_alternate_function_value = candidate_value
+                    normalized_candidate_point = normalized_point
+                    raw_candidate_point = raw_point
+                    mean_at_next_measurement_point = mean
+                    variance_at_next_measurement_point = variance
 
         return raw_candidate_point, normalized_candidate_point, mean_at_next_measurement_point, variance_at_next_measurement_point
 
@@ -255,3 +262,33 @@ class BayesianOptimizer(object):
         measurement_result = zip(self.measured_value, self.__measured_point_in_normalized_input_space)
         for result in measurement_result:
             writer.writerow(list(result))
+
+    def plot_posterior_distribution(self, file_path=None):
+        """
+        plot posterior distribution
+        this method works only if the input space dimension is one
+        :param file_path: output file path
+        :return: None
+        """
+        if len(self.input_space.raw_input_space_list) != 1:
+            print("expected input space dimension is one ")
+            print("input space dimension is " + str(len(self.input_space.raw_input_space_list)))
+            print("")
+        else:
+            self.__update_kernel_matrix_tilde()
+
+            mean_var = [self.__get_mean_variance(np.array([x])) for x
+                        in self.input_space.normalized_input_space_list[0]]
+            mean = [x[0] for x in mean_var]
+            stddev = np.sqrt([x[1] for x in mean_var])
+
+            higher_bound = mean + stddev
+            lower_bound = mean - stddev
+            x = self.input_space.raw_input_space_list[0]
+
+            plt.fill_between(x, higher_bound, lower_bound, color="blue", label="confidence")
+            plt.plot(x, mean, color="red", label="estimated")
+
+            plt.legend()
+            plt.grid()
+            plt.show()

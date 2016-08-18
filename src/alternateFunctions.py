@@ -29,14 +29,34 @@ class AlternateFunction(object):
 
 class UpperConfidenceBound(AlternateFunction):
     """
-    uppper confidence bound
+    upper confidence bound
     """
 
-    def __init__(self, delta=np.power(10.0, -12.0)):
+    def __init__(self, beta=10):
+        super(UpperConfidenceBound, self).__init__()
+        self.beta = beta
+        ''' beta '''
+
+    def get_value(self, mean, variance):
+        """
+
+        :param mean:
+        :param variance:
+        :return:
+        """
+        return mean + np.sqrt(self.beta * variance)
+
+
+class MutualInformation(AlternateFunction):
+    """
+    mutual information
+    """
+
+    def __init__(self, delta=np.power(10.0, -300.0)):
         """
         constructor
         """
-        super(UpperConfidenceBound, self).__init__()
+        super(MutualInformation, self).__init__()
 
         self.gamma = 0.0
         ''' gamma '''
