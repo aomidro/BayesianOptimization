@@ -22,8 +22,11 @@
 
 ## 今後の変更予定
 * Bayesian Optimizerのハイパーパラメータの調整をもう少し系統的に行えるようにできないかと考えています。（参考文献4)
-* ハイパーパラメータ空間の正則化も適当にやれるといいですね。
+* インプット空間の正則化も適当にやれるといいですね。
  - それは各人が最初に手でやれば良い気もする
+* 非定常過程への拡張
+ - ガウス過程を事前分布にとっているわけだが、これだと定常過程しか出てこない。一方で、現実にはほとんどの関数ではそうではないだろう。（たとえば、x*sin(x)は簡単に最適化できるが、x*sin(x^2)は難しい】
+ - その対策についてはRef.6に少し情報がある。これを実装したほうがよいかもしれない。
 * 感度分析機能Ref.5参照。
  - 本当に実装できるかはわからないが、統計的な扱いで推論をしていることのメリットを活かそうと思うとこういうことをやるのが良いのかなと思う。ただ、単に回帰しているだけであることを考えると、私にはそんなに意味があることなのかよくわからない。
 
@@ -43,3 +46,6 @@
 5. M. C. Kennedy and A.O'Hagan "Bayesian calibration of computer models", J. R. Statist. Soc. B, 63, 425–464
  - http://onlinelibrary.wiley.com/doi/10.1111/1467-9868.00294/abstract
  - ベイズ最適化を用いることのメリットとして、統計的な扱いがなんかできるようになるということがある。その取り組みの一つとして評価関数の、パラメータに対する感度を調べるというのがあるようだ。そういうのも実装できるとよい。ただ、単に回帰しているだけだというのを忘れそうになるので怖い。
+6.Snoek, Jasper, Swersky, Kevin, Zemel, Richard S, and Adams and Ryan P. "Input warping for bayesian optimization of nonstationary functions." arXiv preprint arXiv:1402.0929, 2014.
+ - 非定常過程へ
+ - http://techtalks.tv/talks/input-warping-for-bayesian-optimization-of-non-stationary-functions/61042/ に関連トークがある
