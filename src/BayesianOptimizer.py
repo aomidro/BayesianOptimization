@@ -1,176 +1,265 @@
 # coding=utf-8
 """
-created on 2016/07/28
+created on 2016/08/18
 """
-
 import numpy as np
+import matplotlib.pyplot as plt
+import sys
+
 import kernels
-import itertools
+import csv
+import alternateFunctions
 
 
 class BayesianOptimizer(object):
     """
     Bayesian Optimizer class
-    Algorithm is based on the GP-MI(see "Gaussian Process Optimization with Mutual Information").
 
-    ()
+    Args:
+        hoge
+    Attriibutes:
+        hoge
     """
 
-    def __init__(self, black_box_function, bayesian_optimizer_parameter, parameter_range_list, initial_parameter):
+    def __init__(self, input_space, black_box_function, max_iteration=10, measurement_noise=0.01):
         """
-        constructor
-        :param bayesian_optimizer_parameter: bayesian_optimizer parameter
-        :param black_box_function: black-box function
-        :param parameter_range_list: parameter range list [(min1, max1, pitch1), (min2, max2, pitch2), ...]
+
+        :param input_space: input space (InputSpace)
+        :param black_box_function: black box function
+        :param max_iteration: max iteration number
+        :param measurement_noise: measurement noise
         """
+        self.iteration = 0
+        ''' number of times step '''
 
         self.black_box_function = black_box_function
-        ''' black box function '''
+        ''' black box function'''
 
-        self.bayesian_optimizer_parameter = bayesian_optimizer_parameter
-        ''' bayesian optimizer parameter '''
+        self.max_iteration = max_iteration
+        ''' max iteration '''
 
-        self.parameter_range_list = parameter_range_list
-        ''' parameter range list '''
+        self.input_space = input_space
+        ''' input_space '''
 
-        # self.kernel = kernels.GaussianKernel()
-        self.kernel = kernels.MaternKernel()
+        self.__measured_point_in_normalized_input_space = []
+        ''' measured point list in normalized input space '''
+
+        self.measured_point_in_raw_input_space = []
+        ''' measured point list in raw input space '''
+
+        self.measured_value = []
+        ''' measured value list '''
+
+        self.optimal_point = None
+        ''' optimal point '''
+
+        self.optimal_value = -999999999
+        ''' optimal value '''
+
+        self.__kernel = kernels.MaternKernel()
         ''' kernel '''
 
-        self.kernel_matrix = np.array([[self.kernel.compute_value(initial_parameter, initial_parameter)]])
+        self.__kernel_matrix = None
         ''' kernel matrix '''
 
-        self.kernel_matrix_tilde = None
-        ''' inv(Kernel_matrix - \simga^2 * I)'''
+        self.__kernel_matrix_tilde = None
+        ''' inv(Kernel_matrix - \simga^2 * I) '''
 
-        self.gamma = 0.0
-        ''' gamma '''
+        self.__measurement_noise = measurement_noise
+        ''' measurement noise '''
 
-        self.measured_point = [initial_parameter]
-        ''' measured point '''
+        self.__alternate_function = alternateFunctions.UpperConfidenceBound()
+        ''' alternate_function '''
 
-        self.measured_value = [self.black_box_function(initial_parameter)]
-        ''' measured value '''
+        self.__initialize()
 
-        self.optimal_value = -99999999999.0
-        ''' optimal value of the evaluation function '''
+    def __initialize(self):
+        """
+        initialization
 
-        self.optimal_parameter = [0.0] * len(parameter_range_list)
-        ''' optimal parameter set '''
-
-        # self.input_space = [My_xrange(x[0], x[1], x[2]) for x in parameter_range_list]
-        self.input_space = parameter_range_list
-        ''' input space (iterator list) '''
+        :return:
+        """
+        self.measured_point_in_raw_input_space.append(np.array([x[0] for x in self.input_space.raw_input_space_list]))
+        self.__measured_point_in_normalized_input_space.append(
+            np.array([x[0] for x in self.input_space.normalized_input_space_list]))
+        measured_value = self.black_box_function([x[0] for x in self.input_space.raw_input_space_list])
+        self.measured_value.append(measured_value)
+        self.__kernel_matrix = \
+            np.array([[self.__kernel.compute_value(self.__measured_point_in_normalized_input_space[0],
+                                                   self.__measured_point_in_normalized_input_space[0])]])
+        self.__update_optimum(measured_value=measured_value,
+                              next_raw_measurement_point=np.array(
+                                  [x[0] for x in self.input_space.raw_input_space_list]))
+        print(self.__kernel_matrix)
+        self.print_on()
 
     def execute_optimization(self):
         """
-        execute optimization method
-
-        :return: optimized value
+        execute optimization
+        :return: optimal_point, optimal_value
         """
+        while self.iteration < self.max_iteration:
+            self.__step()
+            self.iteration += 1
+        return self.optimal_point, self.optimal_value
 
-        # initialization
-        counter = 0
-        while counter < self.bayesian_optimizer_parameter.epoch:
-            counter += 1
-            # inv_matrix
-            self.__update_kernel_matrix_tilde()
+    def __step(self):
+        """
+        execute exploration one time
+        :return: None
+        """
+        # get kernel matrix tilde
+        self.__update_kernel_matrix_tilde()
 
-            # get next parameter: x_candidate
-            x_candidate = None
-            optimal_evaluation_function_value = -99999999999.0
-            variance_at_x_candidate = 0.0
-            for parameter in itertools.product(*self.input_space):
-                if np.random.rand() < np.power(self.bayesian_optimizer_parameter.coarse_graining,
-                                               len(self.parameter_range_list)):
-                    x = np.array(list(parameter))
-                    # calc k, \hat{k}
-                    k_T = np.array([self.kernel.compute_value(x, x_prime) for x_prime in self.measured_point])
-                    k_T_hat = self.kernel.compute_value(x, x) - np.dot(
-                        np.dot(k_T, self.kernel_matrix_tilde), k_T)
-                    # calc mean
-                    mean = np.dot(np.dot(k_T, self.kernel_matrix_tilde), np.array(self.measured_value))
-                    # calc variance
-                    var = k_T_hat
+        # find next measurement point in the input space
+        next_raw_measurement_point, next_normalized_measurement_point, mean_at_next_measurement_point, variance_at_next_measurement_point \
+            = self.__find_next_measurement_point()
 
-                    # update x_candidate
-                    # UCB
-                    # optimal_evaluation_function_value, x_candidate = self.__update_parameter_UCB(
-                    #     optimal_evaluation_function_value=optimal_evaluation_function_value, mean=mean, var=var, x=x,
-                    #     x_candidate=x_candidate)
-                    # MI
-                    optimal_evaluation_function_value, x_candidate, variance_at_x_candidate = self.__update_parameter_MI(
-                        optimal_evaluation_function_value=optimal_evaluation_function_value, mean=mean, var=var, x=x,
-                        x_candidate=x_candidate)
-            self.gamma = self.gamma + variance_at_x_candidate
-            print(x_candidate)
-            next_parameter_set = np.round(x_candidate, 7)
+        # do measurement
+        measured_value = self.__do_measurement(next_raw_measurement_point, next_normalized_measurement_point)
 
-            # do measurement
-            self.measured_point.append(np.array(next_parameter_set))
-            y = self.black_box_function(next_parameter_set) + np.random.normal(loc=0,
-                                                                               scale=self.bayesian_optimizer_parameter.sigma)
-            if self.optimal_value < y:
-                self.optimal_value = y
-                self.optimal_parameter = next_parameter_set
+        # update optimal value
+        self.__update_optimum(measured_value, next_raw_measurement_point)
 
-            self.measured_value.append(y)
+        # update kernel matrix
+        self.__update_kernel_matrix(next_normalized_parameter_set=next_normalized_measurement_point)
 
-            print("iteration: " + str(counter))
-            print(" this result ->" + str(y))
-            print(" next_value -> " + str(next_parameter_set))
-            print(" current best parameter-> " + str(self.optimal_parameter))
-            print(" current best value-> " + str(self.optimal_value))
-            print("")
+        # update alternate function state
+        self.__alternate_function.update_state(mean_at_next_measurement_point, variance_at_next_measurement_point)
 
-            # update kernel matrix
-            pre_append_vector = [np.array([self.kernel.compute_value(x, next_parameter_set)]) for x in
-                                 self.measured_point]
-            self.kernel_matrix = np.append(self.kernel_matrix, np.array(pre_append_vector[:-1]), axis=1)
-            self.kernel_matrix = np.append(self.kernel_matrix, np.array(
-                [np.array([self.kernel.compute_value(next_parameter_set, x) for x in self.measured_point])]), axis=0)
+        # print out current state
+        self.print_on()
 
-        return self.optimal_parameter, self.optimal_value
+    def __find_next_measurement_point(self):
+        """
+        find next measurement point based on the estimated value of the alternate function
+        :return: next measurement point (in raw input space)
+        """
+        # get input space
+        raw_input_space, normalized_input_space = self.input_space.get_input_space()
+
+        # find optimal next point in the input space
+        optimal_alternate_function_value = -99999999
+        raw_candidate_point = None
+        normalized_candidate_point = None
+        mean_at_next_measurement_point = None
+        variance_at_next_measurement_point = None
+        for raw_point in raw_input_space:
+            raw_point = np.array(raw_point)
+            normalized_point = np.array(normalized_input_space.next())
+
+            # get mean and variance at normalized measurement point
+            mean, variance = self.__get_mean_variance(normalized_point)
+
+            # get alternate function value
+            candidate_value = self.__alternate_function.get_value(mean, variance)
+            if np.round(optimal_alternate_function_value, 7) < np.round(candidate_value, 7):
+                optimal_alternate_function_value = candidate_value
+                normalized_candidate_point = normalized_point
+                raw_candidate_point = raw_point
+                mean_at_next_measurement_point = mean
+                variance_at_next_measurement_point = variance
+
+        return raw_candidate_point, normalized_candidate_point, mean_at_next_measurement_point, variance_at_next_measurement_point
+
+    def __get_mean_variance(self, normalized_candidate_measurement_point):
+        """
+        get mean and variance at measurement point
+        :return: mean, variance
+        """
+        x = np.array(normalized_candidate_measurement_point)
+        # calc k, \hat{k}
+        k_T = np.array([self.__kernel.compute_value(x, x_prime)
+                        for x_prime in self.__measured_point_in_normalized_input_space])
+        k_T_hat = self.__kernel.compute_value(x, x) - np.dot(np.dot(k_T, self.__kernel_matrix_tilde), k_T)
+
+        # calc mean
+        mean = np.dot(np.dot(k_T, self.__kernel_matrix_tilde), np.array(self.measured_value))
+
+        # calc variance
+        variance = k_T_hat
+
+        return mean, variance
+
+    def __do_measurement(self, next_raw_measurement_point, next_normalized_measurement_point):
+        """
+        do measurement of the black box function
+        :param next_raw_measurement_point:
+        :param next_normalized_measurement_point:
+        :return:
+        """
+        # add measurement point
+        self.measured_point_in_raw_input_space.append(next_raw_measurement_point)
+        self.__measured_point_in_normalized_input_space.append(next_normalized_measurement_point)
+
+        # get black box function value
+        measured_value = self.black_box_function(next_raw_measurement_point) + \
+                         np.random.normal(loc=0.0, scale=self.__measurement_noise)
+
+        # add measured value
+        self.measured_value.append(measured_value)
+
+        return measured_value
+
+    def __update_kernel_matrix(self, next_normalized_parameter_set):
+        """
+        update kernel matrix
+        :param next_normalized_parameter_set:
+            next point in normalized input space kernel matrix will be update based on this vector
+        :return: None
+        """
+        pre_append_vector = [np.array([self.__kernel.compute_value(x, next_normalized_parameter_set)])
+                             for x in self.__measured_point_in_normalized_input_space]
+        self.__kernel_matrix = np.append(self.__kernel_matrix, np.array(pre_append_vector[:-1]), axis=1)
+        self.__kernel_matrix = np.append(self.__kernel_matrix,
+                                         np.array([np.array(
+                                             [self.__kernel.compute_value(next_normalized_parameter_set, x) for x in
+                                              self.__measured_point_in_normalized_input_space])]),
+                                         axis=0)
 
     def __update_kernel_matrix_tilde(self):
         """
-        caompute kernel matrix tilde
+        update kernel matrix tilde
         :return: None
         """
+        self.__kernel_matrix_tilde = np.linalg.inv(
+            self.__kernel_matrix +
+            np.power(self.__measurement_noise, 2.0) * np.identity(self.__kernel_matrix.shape[0])
+        )
 
-        self.kernel_matrix_tilde = np.linalg.inv(
-            self.kernel_matrix + self.bayesian_optimizer_parameter.sigma * self.bayesian_optimizer_parameter.sigma * np.identity(
-                self.kernel_matrix.shape[0]))
-
-    def __update_parameter_UCB(self, optimal_evaluation_function_value, mean, var, x, x_candidate):
+    def __update_optimum(self, measured_value, next_raw_measurement_point):
         """
-
-        :param optimal_evaluation_function_value:
-        :param mean: mean of the posterior
-        :param var: variance of the posterior
-        :param x: parameter candidate
-        :param x_candidate: next parameter candidate
-        :return: optimal_optimal_evaluation_function_value, next parameter candidate
+        update optimum
+        :param measured_value:
+        :param next_raw_measurement_point:
+        :return: None
         """
+        if self.optimal_value < measured_value:
+            self.optimal_value = measured_value
+            self.optimal_point = next_raw_measurement_point
 
-        if optimal_evaluation_function_value + 0.001 < (mean + np.sqrt(self.bayesian_optimizer_parameter.beta * var)):
-            return (mean + np.sqrt(self.bayesian_optimizer_parameter.beta * var)), list(x)
-        else:
-            return optimal_evaluation_function_value, x_candidate
-
-    def __update_parameter_MI(self, optimal_evaluation_function_value, mean, var, x, x_candidate):
+    def print_on(self):
         """
-
-        :param optimal_evaluation_function_value:
-        :param mean:
-        :param var:
-        :param x:
-        :param x_candidate:
-        :return:
+        print current state
         """
-        alpha = np.log(2.0 / self.bayesian_optimizer_parameter.delta)
-        evaluation_value = mean + np.sqrt(alpha) * var / (np.sqrt(var + self.gamma) + np.sqrt(self.gamma))
-        if np.round(optimal_evaluation_function_value, 7) < np.round(evaluation_value, 7):
-            return evaluation_value, list(x), var
-        else:
-            return optimal_evaluation_function_value, x_candidate, 0.0
+        print("##### current optimizer status #####")
+        print("current iteration step -> " + str(self.iteration))
+        print("measured points -> ")
+        print("    " + str(self.__measured_point_in_normalized_input_space))
+        print("measured values -> ")
+        print("    " + str(self.measured_value))
+        print("current optimal point ->" + str(self.optimal_point))
+        print("current optimal value ->" + str(self.optimal_value))
+        print("")
+
+    def write_exploration_history(self, file_path=None):
+        """
+        write out exploration history
+        :param file_path: output file path
+        """
+        if file_path is None:
+            file_path = "result_at_iteration" + str(self.iteration) + ".csv"
+        writer = csv.writer(open(file_path, "w"))
+        measurement_result = zip(self.measured_value, self.__measured_point_in_normalized_input_space)
+        for result in measurement_result:
+            writer.writerow(list(result))
