@@ -34,18 +34,23 @@
 1. N. Srinivas, A. Krause, Sham M. Kakade and M. Seeger, "Gaussian Process Optimization in the Bandit Setting: No Regret and Experimental Design" (arXiv:0912.3995v4 [cs.LG] )
  - http://arxiv.org/abs/0912.3995
  - GP-UCBアルゴリズムを用いた更新方法について。
+
 2. E. Contal, V. Perchet and N. Vayatis, "Gaussian Process Optimization with Mutual Information" preprint( arXiv:1311.4825v3[stat.ML])
  - http://arxiv.org/abs/1311.4825
  - 相互情報量を用いた更新方法について
-3. "1020：ベイズ的最適化の入門と応用 機械学習による機械学習の実験計画" 
+
+3. "1020：ベイズ的最適化の入門と応用 機械学習による機械学習の実験計画"
  - https://www.youtube.com/watch?v=pQHWew4YYao
  - 佐藤一誠さんのGTC Japan2015での講演。機械学習の人にとっては、詳細は省いて、イメージを掴みたい場合に有用では
-4. J. Snoek, H. Larochelle and Ryan P. Adams, "Practical Bayesian Optimization of Machine Learning Algorithms", preprint(arXiv:1206.2944v2) 
+
+4. J. Snoek, H. Larochelle and Ryan P. Adams, "Practical Bayesian Optimization of Machine Learning Algorithms", preprint(arXiv:1206.2944v2)
  - https://arxiv.org/abs/1206.2944
  - ハイパーパラメータの調整について書かれている？らしい
+
 5. M. C. Kennedy and A.O'Hagan "Bayesian calibration of computer models", J. R. Statist. Soc. B, 63, 425–464
  - http://onlinelibrary.wiley.com/doi/10.1111/1467-9868.00294/abstract
  - ベイズ最適化を用いることのメリットとして、統計的な扱いがなんかできるようになるということがある。その取り組みの一つとして評価関数の、パラメータに対する感度を調べるというのがあるようだ。そういうのも実装できるとよい。ただ、単に回帰しているだけだというのを忘れそうになるので怖い。
-6.Snoek, Jasper, Swersky, Kevin, Zemel, Richard S, and Adams and Ryan P. "Input warping for bayesian optimization of nonstationary functions." arXiv preprint arXiv:1402.0929, 2014.
+
+6. Snoek, Jasper, Swersky, Kevin, Zemel, Richard S, and Adams and Ryan P. "Input warping for bayesian optimization of nonstationary functions." arXiv preprint arXiv:1402.0929, 2014.
  - 非定常過程へ
  - http://techtalks.tv/talks/input-warping-for-bayesian-optimization-of-non-stationary-functions/61042/ に関連トークがある
