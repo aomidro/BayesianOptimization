@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/BayesianOptimization.iml" filepath="$PROJECT_DIR$/.idea/BayesianOptimization.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/BayesianOptimizer.iml" filepath="$PROJECT_DIR$/.idea/BayesianOptimizer.iml" />
     </modules>
   </component>
 </project>

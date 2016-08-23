@@ -15,7 +15,7 @@ class BayesianOptimizer(object):
     """
 
     def __init__(self, input_space, black_box_function, max_iteration=10, measurement_noise=0.01,
-                 coarse_graining_parameter=0.9):
+                 coarse_graining_parameter=1.0):
         """
 
         :param input_space: input space (InputSpace)
